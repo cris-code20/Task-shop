@@ -30,8 +30,13 @@ export default function Auth() {
         if (error) throw error
         setMessage('Por favor, revisa tu email para confirmar tu cuenta')
       }
-    } catch (error: any) {
-      setMessage(error.message)
+    } catch (error) {
+      // Corregimos el error de tipo 'any'
+      if (error instanceof Error) {
+        setMessage(error.message)
+      } else {
+        setMessage('Ocurrió un error inesperado')
+      }
     } finally {
       setLoading(false)
     }

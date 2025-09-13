@@ -22,7 +22,7 @@ interface ShoppingListProps {
   session: Session | null
 }
 
-export default function ShoppingList({ user, session }: ShoppingListProps) {
+export default function ShoppingList({ user }: ShoppingListProps) {
   const [items, setItems] = useState<ShoppingItem[]>([])
   const [newItem, setNewItem] = useState('')
   const [newQuantity, setNewQuantity] = useState('')
@@ -59,12 +59,12 @@ export default function ShoppingList({ user, session }: ShoppingListProps) {
     }
   }, [])
 
-  useEffect(() => {
+   useEffect(() => {
     setMounted(true)
     fetchItems()
 
     // Suscripción optimizada a cambios en tiempo real
-    const channel = supabase
+     const channel = supabase
       .channel('shopping_list_changes')
       .on(
         'postgres_changes',
@@ -138,7 +138,7 @@ export default function ShoppingList({ user, session }: ShoppingListProps) {
       fetchItems();
     }, 5000);
 
-    return () => {
+     return () => {
       supabase.removeChannel(channel)
       clearInterval(interval);
     }
