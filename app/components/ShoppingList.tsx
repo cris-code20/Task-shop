@@ -3,7 +3,7 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
-import { User } from '@supabase/supabase-js'
+import { User,RealtimeChannel  } from '@supabase/supabase-js'
 
 interface ShoppingItem {
   id: number
@@ -59,11 +59,11 @@ export default function ShoppingList({ user }: ShoppingListProps) {
     }
   }, [])
 
-  useEffect(() => {
+    useEffect(() => {
     setMounted(true)
     fetchItems()
 
-    let channel: any = null
+    let channel: RealtimeChannel | null = null
     let retryCount = 0
     const maxRetries = 3
 
@@ -80,27 +80,24 @@ export default function ShoppingList({ user }: ShoppingListProps) {
           (payload) => {
             console.log('Cambio recibido:', payload)
             setConnectionStatus('connected')
-            retryCount = 0 // Resetear contador de reintentos
+            retryCount = 0
             
             if (payload.eventType === 'INSERT') {
-              // Para inserciones, hacer fetch completo para obtener relaciones
               fetchItems()
             } else if (payload.eventType === 'UPDATE') {
-              // Optimistic update para cambios rápidos
               setItems(prevItems => 
                 prevItems.map(item => 
                   item.id === payload.new.id ? { ...item, ...payload.new } : item
                 )
               )
             } else if (payload.eventType === 'DELETE') {
-              // Optimistic delete
               setItems(prevItems => 
                 prevItems.filter(item => item.id !== payload.old.id)
               )
             }
           }
         )
-        .subscribe((status, err) => {
+        .subscribe((status) => { // CORRECCIÓN: Remover el parámetro 'err' no utilizado
           console.log('Estado de suscripción:', status)
           if (status === 'SUBSCRIBED') {
             setConnectionStatus('connected')
@@ -109,7 +106,7 @@ export default function ShoppingList({ user }: ShoppingListProps) {
             setConnectionStatus('disconnected')
             if (retryCount < maxRetries) {
               retryCount++
-              setTimeout(setupRealtime, 2000 * retryCount) // Reintentar con backoff
+              setTimeout(setupRealtime, 2000 * retryCount)
             }
           }
         })
@@ -117,13 +114,12 @@ export default function ShoppingList({ user }: ShoppingListProps) {
 
     setupRealtime()
 
-    // Polling más agresivo como respaldo
     const interval = setInterval(() => {
       if (connectionStatus === 'disconnected') {
         setConnectionStatus('polling')
         fetchItems()
       }
-    }, 2000) // Polling cada 2 segundos si hay problemas
+    }, 2000)
 
     return () => {
       if (channel) {

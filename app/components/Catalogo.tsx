@@ -1,3 +1,4 @@
+// app/components/Catalogo.tsx
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
@@ -40,7 +41,8 @@ export default function ProductCatalog({ user }: ProductCatalogProps) {
 
   const fetchProducts = useCallback(async () => {
     try {
-      let query = supabase
+      // CORRECCIÓN: Cambiar 'let' por 'const' ya que no se reassigna
+      const query = supabase
         .from('product_catalog')
         .select('*')
         .order('name', { ascending: true })
@@ -63,6 +65,7 @@ export default function ProductCatalog({ user }: ProductCatalogProps) {
     setMounted(true)
     fetchProducts()
 
+    // CORRECCIÓN: Especificar el tipo correcto para el canal
     const channel = supabase
       .channel('product_catalog_changes')
       .on('postgres_changes', 
@@ -74,7 +77,7 @@ export default function ProductCatalog({ user }: ProductCatalogProps) {
       .subscribe()
 
     return () => {
-      supabase.removeChannel(channel)
+      channel.unsubscribe()
     }
   }, [fetchProducts])
 
@@ -110,9 +113,14 @@ export default function ProductCatalog({ user }: ProductCatalogProps) {
       setFormData({ name: '', price: '', category: '', description: '' })
       setEditingProduct(null)
       setShowForm(false)
-    } catch (error: any) {
+    } catch (error) {
+      // CORRECCIÓN: Eliminar el tipo 'any' y usar type checking
       console.error('Error saving product:', error)
-      alert(error.message)
+      if (error instanceof Error) {
+        alert(error.message)
+      } else {
+        alert('Error al guardar el producto')
+      }
     } finally {
       setSaving(false)
     }
@@ -140,9 +148,14 @@ export default function ProductCatalog({ user }: ProductCatalogProps) {
         .eq('id', id)
 
       if (error) throw error
-    } catch (error: any) {
+    } catch (error) {
+      // CORRECCIÓN: Eliminar el tipo 'any' y usar type checking
       console.error('Error deleting product:', error)
-      alert(error.message)
+      if (error instanceof Error) {
+        alert(error.message)
+      } else {
+        alert('Error al eliminar el producto')
+      }
     } finally {
       setDeletingProducts(prev => prev.filter(productId => productId !== id))
     }
@@ -162,7 +175,7 @@ export default function ProductCatalog({ user }: ProductCatalogProps) {
     return matchesSearch && matchesCategory
   })
 
-  if (!mounted) {
+ if (!mounted) {
     return (
       <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-100">
         <div className="animate-pulse">
@@ -407,3 +420,6 @@ export default function ProductCatalog({ user }: ProductCatalogProps) {
     </div>
   )
 }
+
+
+  
